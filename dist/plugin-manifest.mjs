@@ -47,4 +47,4 @@ var manifest_default = manifest;
 export {
   manifest_default as default
 };
-//# sourceMappingURL=manifest.mjs.map
+//# sourceMappingURL=plugin-manifest.mjs.map

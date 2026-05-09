@@ -1,7 +1,10 @@
 import * as esbuild from 'esbuild';
 
 await esbuild.build({
-  entryPoints: ['src/worker.ts', 'src/manifest.ts'],
+  entryPoints: {
+    'worker': 'src/worker.ts',
+    'plugin-manifest': 'src/manifest.ts',
+  },
   bundle: true,
   platform: 'node',
   target: 'node20',
