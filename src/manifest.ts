@@ -12,8 +12,8 @@ const manifest = {
     'plugin.state.read',
     'plugin.state.write',
     'http.outbound',
-    'tools.register',
-    'webhooks.handle',
+    'agent.tools.register',
+    'webhooks.receive',
   ] as const,
 
   entrypoints: {
