@@ -4,7 +4,7 @@ import { createRequire } from 'module'; const require = createRequire(import.met
 var manifest = {
   id: "zernio",
   apiVersion: 1,
-  version: "0.1.0",
+  version: "0.2.0",
   displayName: "Zernio",
   description: "Social media management via the Zernio API \u2014 schedule posts, manage inbox, and view analytics across 14+ platforms.",
   author: "SGNL Studio",
