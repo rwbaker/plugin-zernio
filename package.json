@@ -23,5 +23,13 @@
     "type": "git",
     "url": "https://github.com/rwbaker/plugin-zernio.git"
   },
-  "description": "Paperclip plugin for the Zernio social media management API"
+  "description": "Paperclip plugin for the Zernio social media management API",
+  "files": [
+    "dist/",
+    "src/",
+    "build.mjs",
+    "tsconfig.json",
+    "README.md",
+    "LICENSE"
+  ]
 }
