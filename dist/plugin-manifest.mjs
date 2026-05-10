@@ -4,7 +4,7 @@ import { createRequire } from 'module'; const require = createRequire(import.met
 var manifest = {
   id: "zernio",
   apiVersion: 1,
-  version: "0.2.0",
+  version: "0.3.0",
   displayName: "Zernio",
   description: "Social media management via the Zernio API \u2014 schedule posts, manage inbox, and view analytics across 14+ platforms.",
   author: "SGNL Studio",
@@ -14,7 +14,8 @@ var manifest = {
     "plugin.state.write",
     "http.outbound",
     "agent.tools.register",
-    "webhooks.receive"
+    "webhooks.receive",
+    "secrets.read-ref"
   ],
   entrypoints: {
     worker: "dist/worker.mjs"
@@ -24,8 +25,9 @@ var manifest = {
     properties: {
       zernioApiKey: {
         type: "string",
+        format: "secret-ref",
         title: "Zernio API Key",
-        description: "Your Zernio API key (starts with sk_)."
+        description: "Secret reference for your Zernio API key. Select a secret from the project env."
       },
       defaultProfileId: {
         type: "string",

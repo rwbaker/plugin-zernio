@@ -1,10 +1,11 @@
 import { definePlugin, runWorker } from '@paperclipai/plugin-sdk';
 import { ZernioClient, ZernioApiError } from './zernio-client.js';
 
-function getClient(ctx: { config: unknown }): ZernioClient {
+async function getClient(ctx: { config: unknown; secrets: { resolve(ref: string): Promise<string> } }): Promise<ZernioClient> {
   const config = ctx.config as Record<string, unknown>;
-  const apiKey = config.zernioApiKey as string | undefined;
-  if (!apiKey) throw new Error('Zernio API key is not configured.');
+  const secretRef = config.zernioApiKey as string | undefined;
+  if (!secretRef) throw new Error('Zernio API key is not configured.');
+  const apiKey = await ctx.secrets.resolve(secretRef);
   return new ZernioClient({ apiKey });
 }
 
@@ -20,7 +21,7 @@ const plugin = definePlugin({
         parametersSchema: { type: 'object', properties: {} },
       },
       async () => {
-        const client = getClient(ctx);
+        const client = await getClient(ctx);
         const accounts = await client.listAccounts();
         return { content: JSON.stringify(accounts, null, 2) };
       },
@@ -97,7 +98,7 @@ const plugin = definePlugin({
         },
       },
       async (params) => {
-        const client = getClient(ctx);
+        const client = await getClient(ctx);
         const result = await client.createPost(params as any);
         return { content: JSON.stringify(result, null, 2) };
       },
@@ -123,7 +124,7 @@ const plugin = definePlugin({
         },
       },
       async (params) => {
-        const client = getClient(ctx);
+        const client = await getClient(ctx);
         const result = await client.listPosts(params as any);
         return { content: JSON.stringify(result, null, 2) };
       },
@@ -143,7 +144,7 @@ const plugin = definePlugin({
         },
       },
       async (params) => {
-        const client = getClient(ctx);
+        const client = await getClient(ctx);
         const p = params as { postId: string };
         const result = await client.getPost(p.postId);
         return { content: JSON.stringify(result, null, 2) };
@@ -164,7 +165,7 @@ const plugin = definePlugin({
         },
       },
       async (params) => {
-        const client = getClient(ctx);
+        const client = await getClient(ctx);
         const p = params as { postId: string };
         await client.deletePost(p.postId);
         return { content: `Post ${p.postId} deleted.` };
@@ -185,7 +186,7 @@ const plugin = definePlugin({
         },
       },
       async (params) => {
-        const client = getClient(ctx);
+        const client = await getClient(ctx);
         const p = params as { postId: string };
         const result = await client.retryPost(p.postId);
         return { content: JSON.stringify(result, null, 2) };
@@ -219,7 +220,7 @@ const plugin = definePlugin({
         },
       },
       async (params) => {
-        const client = getClient(ctx);
+        const client = await getClient(ctx);
         const result = await client.getAnalytics(params as any);
         return { content: JSON.stringify(result, null, 2) };
       },
@@ -241,7 +242,7 @@ const plugin = definePlugin({
         },
       },
       async (params) => {
-        const client = getClient(ctx);
+        const client = await getClient(ctx);
         const p = params as { accountId?: string };
         const result = await client.getBestTimes(p.accountId);
         return { content: JSON.stringify(result, null, 2) };
@@ -264,7 +265,7 @@ const plugin = definePlugin({
         },
       },
       async (params) => {
-        const client = getClient(ctx);
+        const client = await getClient(ctx);
         const p = params as { limit?: number; offset?: number };
         const result = await client.listConversations(p.limit, p.offset);
         return { content: JSON.stringify(result, null, 2) };
@@ -289,7 +290,7 @@ const plugin = definePlugin({
         },
       },
       async (params) => {
-        const client = getClient(ctx);
+        const client = await getClient(ctx);
         const result = await client.sendMessage(params as any);
         return { content: JSON.stringify(result, null, 2) };
       },
@@ -309,7 +310,7 @@ const plugin = definePlugin({
         },
       },
       async (params) => {
-        const client = getClient(ctx);
+        const client = await getClient(ctx);
         const p = params as { limit?: number; offset?: number };
         const result = await client.listComments(p.limit, p.offset);
         return { content: JSON.stringify(result, null, 2) };
@@ -334,7 +335,7 @@ const plugin = definePlugin({
         },
       },
       async (params) => {
-        const client = getClient(ctx);
+        const client = await getClient(ctx);
         const result = await client.replyToComment(params as any);
         return { content: JSON.stringify(result, null, 2) };
       },
@@ -343,11 +344,9 @@ const plugin = definePlugin({
 
   async onValidateConfig(config: Record<string, unknown>) {
     const errors: string[] = [];
-    const apiKey = config.zernioApiKey as string | undefined;
-    if (!apiKey) {
-      errors.push('Zernio API key is required.');
-    } else if (!apiKey.startsWith('sk_')) {
-      errors.push('Zernio API key must start with "sk_".');
+    const secretRef = config.zernioApiKey as string | undefined;
+    if (!secretRef) {
+      errors.push('Zernio API key secret reference is required.');
     }
     return { ok: errors.length === 0, errors };
   },
