@@ -4,7 +4,7 @@
   "type": "module",
   "main": "dist/worker.mjs",
   "paperclipPlugin": {
-    "manifest": "dist/plugin-manifest.mjs"
+    "manifest": "dist/zernio-manifest.mjs"
   },
   "scripts": {
     "build": "node build.mjs",

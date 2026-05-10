@@ -3,7 +3,7 @@ import * as esbuild from 'esbuild';
 await esbuild.build({
   entryPoints: {
     'worker': 'src/worker.ts',
-    'plugin-manifest': 'src/manifest.ts',
+    'zernio-manifest': 'src/manifest.ts',
   },
   bundle: true,
   platform: 'node',

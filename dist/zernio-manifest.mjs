@@ -49,4 +49,4 @@ var manifest_default = manifest;
 export {
   manifest_default as default
 };
-//# sourceMappingURL=plugin-manifest.mjs.map
+//# sourceMappingURL=zernio-manifest.mjs.map
