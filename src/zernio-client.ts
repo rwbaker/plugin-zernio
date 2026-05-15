@@ -1,4 +1,4 @@
-const BASE_URL = 'https://zernio.com/api/v1';
+export const BASE_URL = 'https://zernio.com/api/v1';
 
 export class ZernioApiError extends Error {
   statusCode: number;
@@ -22,6 +22,7 @@ export class ZernioRateLimitError extends ZernioApiError {
 
 export interface ZernioClientOptions {
   apiKey: string;
+  baseUrl?: string;
 }
 
 export interface CreatePostParams {
@@ -61,11 +62,25 @@ export interface AnalyticsParams {
   endDate?: string;
 }
 
+function requireString(value: unknown, name: string): string {
+  if (typeof value !== 'string' || value.length === 0) {
+    throw new Error(`${name} is required and must be a non-empty string.`);
+  }
+  return value;
+}
+
+function encodePathSegment(segment: string): string {
+  return encodeURIComponent(segment);
+}
+
 export class ZernioClient {
   private apiKey: string;
+  private baseUrl: string;
 
   constructor(options: ZernioClientOptions) {
+    if (!options.apiKey) throw new Error('apiKey is required.');
     this.apiKey = options.apiKey;
+    this.baseUrl = options.baseUrl ?? BASE_URL;
   }
 
   private async request<T = unknown>(
@@ -74,7 +89,7 @@ export class ZernioClient {
     body?: unknown,
     query?: Record<string, string | number | undefined>,
   ): Promise<T> {
-    const url = new URL(`${BASE_URL}${path}`);
+    const url = new URL(`${this.baseUrl}${path}`);
     if (query) {
       for (const [k, v] of Object.entries(query)) {
         if (v !== undefined) url.searchParams.set(k, String(v));
@@ -94,10 +109,7 @@ export class ZernioClient {
 
     if (res.status === 429) {
       const retryAfter = parseInt(res.headers.get('retry-after') ?? '60', 10);
-      throw new ZernioRateLimitError(
-        `Zernio rate limit exceeded`,
-        retryAfter,
-      );
+      throw new ZernioRateLimitError('Zernio rate limit exceeded', retryAfter);
     }
 
     if (!res.ok) {
@@ -135,19 +147,23 @@ export class ZernioClient {
   }
 
   async getPost(postId: string) {
-    return this.request('GET', `/posts/${postId}`);
+    requireString(postId, 'postId');
+    return this.request('GET', `/posts/${encodePathSegment(postId)}`);
   }
 
   async updatePost(postId: string, params: Partial<CreatePostParams>) {
-    return this.request('PUT', `/posts/${postId}`, params);
+    requireString(postId, 'postId');
+    return this.request('PUT', `/posts/${encodePathSegment(postId)}`, params);
   }
 
   async deletePost(postId: string) {
-    return this.request('DELETE', `/posts/${postId}`);
+    requireString(postId, 'postId');
+    return this.request('DELETE', `/posts/${encodePathSegment(postId)}`);
   }
 
   async retryPost(postId: string) {
-    return this.request('POST', `/posts/${postId}/retry`);
+    requireString(postId, 'postId');
+    return this.request('POST', `/posts/${encodePathSegment(postId)}/retry`);
   }
 
   // --- Analytics ---
@@ -171,15 +187,19 @@ export class ZernioClient {
   }
 
   async getConversation(conversationId: string) {
-    return this.request('GET', `/inbox/conversations/${conversationId}`);
+    requireString(conversationId, 'conversationId');
+    return this.request('GET', `/inbox/conversations/${encodePathSegment(conversationId)}`);
   }
 
   async listMessages(conversationId: string) {
-    return this.request('GET', `/inbox/messages/${conversationId}`);
+    requireString(conversationId, 'conversationId');
+    return this.request('GET', `/inbox/messages/${encodePathSegment(conversationId)}`);
   }
 
   async sendMessage(params: SendMessageParams) {
-    return this.request('POST', `/inbox/messages/${params.conversationId}`, {
+    requireString(params.conversationId, 'conversationId');
+    requireString(params.text, 'text');
+    return this.request('POST', `/inbox/messages/${encodePathSegment(params.conversationId)}`, {
       text: params.text,
     });
   }
@@ -189,7 +209,9 @@ export class ZernioClient {
   }
 
   async replyToComment(params: ReplyCommentParams) {
-    return this.request('POST', `/inbox/comments/${params.postId}/reply`, {
+    requireString(params.postId, 'postId');
+    requireString(params.text, 'text');
+    return this.request('POST', `/inbox/comments/${encodePathSegment(params.postId)}/reply`, {
       text: params.text,
     });
   }
@@ -201,16 +223,22 @@ export class ZernioClient {
   }
 
   async createProfile(name: string) {
+    requireString(name, 'name');
     return this.request('POST', '/profiles', { name });
   }
 
   // --- Webhooks ---
 
   async createWebhook(url: string, events: string[]) {
+    requireString(url, 'url');
+    if (!Array.isArray(events) || events.length === 0) {
+      throw new Error('events must be a non-empty array.');
+    }
     return this.request('POST', '/webhooks', { url, events });
   }
 
   async deleteWebhook(webhookId: string) {
-    return this.request('DELETE', `/webhooks/${webhookId}`);
+    requireString(webhookId, 'webhookId');
+    return this.request('DELETE', `/webhooks/${encodePathSegment(webhookId)}`);
   }
 }

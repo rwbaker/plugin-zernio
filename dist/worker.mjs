@@ -1,5 +1,3 @@
-import { createRequire } from 'module'; const require = createRequire(import.meta.url);
-
 // src/worker.ts
 import { definePlugin, runWorker } from "@paperclipai/plugin-sdk";
 
@@ -23,13 +21,25 @@ var ZernioRateLimitError = class extends ZernioApiError {
     this.retryAfterSeconds = retryAfterSeconds;
   }
 };
+function requireString(value, name) {
+  if (typeof value !== "string" || value.length === 0) {
+    throw new Error(`${name} is required and must be a non-empty string.`);
+  }
+  return value;
+}
+function encodePathSegment(segment) {
+  return encodeURIComponent(segment);
+}
 var ZernioClient = class {
   apiKey;
+  baseUrl;
   constructor(options) {
+    if (!options.apiKey) throw new Error("apiKey is required.");
     this.apiKey = options.apiKey;
+    this.baseUrl = options.baseUrl ?? BASE_URL;
   }
   async request(method, path, body, query) {
-    const url = new URL(`${BASE_URL}${path}`);
+    const url = new URL(`${this.baseUrl}${path}`);
     if (query) {
       for (const [k, v] of Object.entries(query)) {
         if (v !== void 0) url.searchParams.set(k, String(v));
@@ -46,10 +56,7 @@ var ZernioClient = class {
     });
     if (res.status === 429) {
       const retryAfter = parseInt(res.headers.get("retry-after") ?? "60", 10);
-      throw new ZernioRateLimitError(
-        `Zernio rate limit exceeded`,
-        retryAfter
-      );
+      throw new ZernioRateLimitError("Zernio rate limit exceeded", retryAfter);
     }
     if (!res.ok) {
       let errBody;
@@ -79,16 +86,20 @@ var ZernioClient = class {
     return this.request("GET", "/posts", void 0, params);
   }
   async getPost(postId) {
-    return this.request("GET", `/posts/${postId}`);
+    requireString(postId, "postId");
+    return this.request("GET", `/posts/${encodePathSegment(postId)}`);
   }
   async updatePost(postId, params) {
-    return this.request("PUT", `/posts/${postId}`, params);
+    requireString(postId, "postId");
+    return this.request("PUT", `/posts/${encodePathSegment(postId)}`, params);
   }
   async deletePost(postId) {
-    return this.request("DELETE", `/posts/${postId}`);
+    requireString(postId, "postId");
+    return this.request("DELETE", `/posts/${encodePathSegment(postId)}`);
   }
   async retryPost(postId) {
-    return this.request("POST", `/posts/${postId}/retry`);
+    requireString(postId, "postId");
+    return this.request("POST", `/posts/${encodePathSegment(postId)}/retry`);
   }
   // --- Analytics ---
   async getAnalytics(params) {
@@ -105,13 +116,17 @@ var ZernioClient = class {
     return this.request("GET", "/inbox/conversations", void 0, { limit, offset });
   }
   async getConversation(conversationId) {
-    return this.request("GET", `/inbox/conversations/${conversationId}`);
+    requireString(conversationId, "conversationId");
+    return this.request("GET", `/inbox/conversations/${encodePathSegment(conversationId)}`);
   }
   async listMessages(conversationId) {
-    return this.request("GET", `/inbox/messages/${conversationId}`);
+    requireString(conversationId, "conversationId");
+    return this.request("GET", `/inbox/messages/${encodePathSegment(conversationId)}`);
   }
   async sendMessage(params) {
-    return this.request("POST", `/inbox/messages/${params.conversationId}`, {
+    requireString(params.conversationId, "conversationId");
+    requireString(params.text, "text");
+    return this.request("POST", `/inbox/messages/${encodePathSegment(params.conversationId)}`, {
       text: params.text
     });
   }
@@ -119,7 +134,9 @@ var ZernioClient = class {
     return this.request("GET", "/inbox/comments", void 0, { limit, offset });
   }
   async replyToComment(params) {
-    return this.request("POST", `/inbox/comments/${params.postId}/reply`, {
+    requireString(params.postId, "postId");
+    requireString(params.text, "text");
+    return this.request("POST", `/inbox/comments/${encodePathSegment(params.postId)}/reply`, {
       text: params.text
     });
   }
@@ -128,23 +145,38 @@ var ZernioClient = class {
     return this.request("GET", "/profiles");
   }
   async createProfile(name) {
+    requireString(name, "name");
     return this.request("POST", "/profiles", { name });
   }
   // --- Webhooks ---
   async createWebhook(url, events) {
+    requireString(url, "url");
+    if (!Array.isArray(events) || events.length === 0) {
+      throw new Error("events must be a non-empty array.");
+    }
     return this.request("POST", "/webhooks", { url, events });
   }
   async deleteWebhook(webhookId) {
-    return this.request("DELETE", `/webhooks/${webhookId}`);
+    requireString(webhookId, "webhookId");
+    return this.request("DELETE", `/webhooks/${encodePathSegment(webhookId)}`);
   }
 };
 
 // src/worker.ts
+var RAW_KEY_PREFIX = /^sk[_-]/;
+async function resolveApiKey(secrets, value) {
+  if (RAW_KEY_PREFIX.test(value)) return value;
+  try {
+    return await secrets.resolve(value);
+  } catch {
+    return value;
+  }
+}
 async function getClient(ctx) {
-  const config = ctx.config;
-  const secretRef = config.zernioApiKey;
-  if (!secretRef) throw new Error("Zernio API key is not configured.");
-  const apiKey = await ctx.secrets.resolve(secretRef);
+  const config = await ctx.config.get();
+  const keyValue = config.zernioApiKey;
+  if (!keyValue) throw new Error("Zernio API key is not configured.");
+  const apiKey = await resolveApiKey(ctx.secrets, keyValue);
   return new ZernioClient({ apiKey });
 }
 var plugin = definePlugin({
@@ -456,9 +488,9 @@ var plugin = definePlugin({
   },
   async onValidateConfig(config) {
     const errors = [];
-    const secretRef = config.zernioApiKey;
-    if (!secretRef) {
-      errors.push("Zernio API key secret reference is required.");
+    const key = config.zernioApiKey;
+    if (!key || typeof key !== "string" || key.trim().length === 0) {
+      errors.push("Zernio API key is required. Provide a secret name or raw key.");
     }
     return { ok: errors.length === 0, errors };
   },

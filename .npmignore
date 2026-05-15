@@ -1,0 +1,6 @@
+tests/
+node_modules/
+*.test.mjs
+*.map
+.git/
+package-lock.json

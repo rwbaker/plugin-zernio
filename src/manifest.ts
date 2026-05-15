@@ -1,7 +1,7 @@
 const manifest = {
   id: 'zernio',
   apiVersion: 1 as const,
-  version: '0.3.0',
+  version: '0.4.0',
   displayName: 'Zernio',
   description:
     'Social media management via the Zernio API — schedule posts, manage inbox, and view analytics across 14+ platforms.',
@@ -26,10 +26,9 @@ const manifest = {
     properties: {
       zernioApiKey: {
         type: 'string',
-        format: 'secret-ref',
         title: 'Zernio API Key',
         description:
-          'Secret reference for your Zernio API key. Select a secret from the project env.',
+          'Enter a secret name from project env (e.g. ZERNIO_API_KEY) or paste a raw API key (sk_…). Secret names are resolved at runtime.',
       },
       defaultProfileId: {
         type: 'string',

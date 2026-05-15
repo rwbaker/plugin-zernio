@@ -1,6 +1,6 @@
 {
   "name": "plugin-zernio",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "type": "module",
   "main": "dist/worker.mjs",
   "paperclipPlugin": {
@@ -9,8 +9,18 @@
   "scripts": {
     "build": "node build.mjs",
     "prepare": "node build.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --test tests/*.test.mjs"
   },
+  "keywords": [
+    "paperclip",
+    "paperclip-plugin",
+    "zernio",
+    "social-media",
+    "social-media-management",
+    "scheduling",
+    "analytics"
+  ],
   "dependencies": {
     "@paperclipai/plugin-sdk": ">=2026.416.0"
   },
@@ -23,6 +33,11 @@
     "type": "git",
     "url": "https://github.com/rwbaker/plugin-zernio.git"
   },
+  "homepage": "https://github.com/rwbaker/plugin-zernio#readme",
+  "bugs": {
+    "url": "https://github.com/rwbaker/plugin-zernio/issues"
+  },
+  "author": "SGNL Studio",
   "description": "Paperclip plugin for the Zernio social media management API",
   "files": [
     "dist/",

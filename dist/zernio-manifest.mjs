@@ -1,10 +1,8 @@
-import { createRequire } from 'module'; const require = createRequire(import.meta.url);
-
 // src/manifest.ts
 var manifest = {
   id: "zernio",
   apiVersion: 1,
-  version: "0.3.0",
+  version: "0.4.0",
   displayName: "Zernio",
   description: "Social media management via the Zernio API \u2014 schedule posts, manage inbox, and view analytics across 14+ platforms.",
   author: "SGNL Studio",
@@ -25,9 +23,8 @@ var manifest = {
     properties: {
       zernioApiKey: {
         type: "string",
-        format: "secret-ref",
         title: "Zernio API Key",
-        description: "Secret reference for your Zernio API key. Select a secret from the project env."
+        description: "Enter a secret name from project env (e.g. ZERNIO_API_KEY) or paste a raw API key (sk_\u2026). Secret names are resolved at runtime."
       },
       defaultProfileId: {
         type: "string",
@@ -49,4 +46,4 @@ var manifest_default = manifest;
 export {
   manifest_default as default
 };
-//# sourceMappingURL=zernio-manifest.mjs.map
+//# sourceMappingURL=manifest.mjs.map

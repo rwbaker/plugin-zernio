@@ -1,11 +1,30 @@
 import { definePlugin, runWorker } from '@paperclipai/plugin-sdk';
-import { ZernioClient, ZernioApiError } from './zernio-client.js';
+import { ZernioClient } from './zernio-client.js';
 
-async function getClient(ctx: { config: unknown; secrets: { resolve(ref: string): Promise<string> } }): Promise<ZernioClient> {
-  const config = ctx.config as Record<string, unknown>;
-  const secretRef = config.zernioApiKey as string | undefined;
-  if (!secretRef) throw new Error('Zernio API key is not configured.');
-  const apiKey = await ctx.secrets.resolve(secretRef);
+const RAW_KEY_PREFIX = /^sk[_-]/;
+
+interface ConfigClient {
+  get(): Promise<Record<string, unknown>>;
+}
+
+interface SecretsClient {
+  resolve(ref: string): Promise<string>;
+}
+
+async function resolveApiKey(secrets: SecretsClient, value: string): Promise<string> {
+  if (RAW_KEY_PREFIX.test(value)) return value;
+  try {
+    return await secrets.resolve(value);
+  } catch {
+    return value;
+  }
+}
+
+async function getClient(ctx: { config: ConfigClient; secrets: SecretsClient }): Promise<ZernioClient> {
+  const config = await ctx.config.get();
+  const keyValue = config.zernioApiKey as string | undefined;
+  if (!keyValue) throw new Error('Zernio API key is not configured.');
+  const apiKey = await resolveApiKey(ctx.secrets, keyValue);
   return new ZernioClient({ apiKey });
 }
 
@@ -344,9 +363,9 @@ const plugin = definePlugin({
 
   async onValidateConfig(config: Record<string, unknown>) {
     const errors: string[] = [];
-    const secretRef = config.zernioApiKey as string | undefined;
-    if (!secretRef) {
-      errors.push('Zernio API key secret reference is required.');
+    const key = config.zernioApiKey;
+    if (!key || typeof key !== 'string' || key.trim().length === 0) {
+      errors.push('Zernio API key is required. Provide a secret name or raw key.');
     }
     return { ok: errors.length === 0, errors };
   },
