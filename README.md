@@ -1,4 +1,4 @@
-# plugin-zernio
+# paperclip-plugin-zernio
 
 Paperclip plugin for the [Zernio](https://zernio.com) social media management API.
 
@@ -9,7 +9,7 @@ Sign up for Zernio: [https://zernio.link/richard-baker](https://zernio.link/rich
 ## Installation
 
 ```bash
-npm install plugin-zernio
+npm install paperclip-plugin-zernio
 ```
 
 Or add to your Paperclip `plugins/package.json`:
@@ -17,7 +17,7 @@ Or add to your Paperclip `plugins/package.json`:
 ```json
 {
   "dependencies": {
-    "plugin-zernio": "^0.4.0"
+    "paperclip-plugin-zernio": "^0.4.1"
   }
 }
 ```

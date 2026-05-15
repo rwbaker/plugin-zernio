@@ -1,7 +1,7 @@
 const manifest = {
   id: 'zernio',
   apiVersion: 1 as const,
-  version: '0.4.0',
+  version: '0.4.1',
   displayName: 'Zernio',
   description:
     'Social media management via the Zernio API — schedule posts, manage inbox, and view analytics across 14+ platforms.',

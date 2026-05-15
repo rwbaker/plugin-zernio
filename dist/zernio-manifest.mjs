@@ -2,7 +2,7 @@
 var manifest = {
   id: "zernio",
   apiVersion: 1,
-  version: "0.4.0",
+  version: "0.4.1",
   displayName: "Zernio",
   description: "Social media management via the Zernio API \u2014 schedule posts, manage inbox, and view analytics across 14+ platforms.",
   author: "SGNL Studio",
